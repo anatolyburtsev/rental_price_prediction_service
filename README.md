@@ -1,6 +1,7 @@
 # Rental price prediction service
 MLOPS project
 
+# [High level design (link)](./HighLevelDesign.md)
 
 # Setup
 ## Create virtual env
