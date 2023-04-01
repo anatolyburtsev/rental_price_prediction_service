@@ -16,6 +16,12 @@ pip install -r requirements.txt
 ```
 
 ## Fetch data
+### Example
 ```shell
-python fetch_data.py
+python src/fetch_data.py --city vancouver-bc --output_prefix train_data --output_format csv
+```
+
+### Get help
+```shell
+python src/fetch_data.py --help
 ```

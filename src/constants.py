@@ -7,7 +7,6 @@ DEFAULT_LISTING_REQUEST_PARAMS = \
      'minPrice': 0,
      'shortTerm': False,
      'transits': {},
-     'url': 'vancouver-bc',
      'limit': 100,
      'matching': True,
      'ignorePopular': True,

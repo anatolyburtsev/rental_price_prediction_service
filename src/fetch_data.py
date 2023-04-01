@@ -1,65 +1,27 @@
-import requests
-import json
 import logging
-from datetime import datetime
-import pandas as pd
+import argparse
 
-from constants import XZ_TOKEN_URL, LISTING_URL, DEFAULT_LISTING_REQUEST_PARAMS
+from io_lib import store_json_to_csv, dummy_store_data
+from zumper_lib import get_all_listings
 
 logger = logging.getLogger()
 
-
-class ZumperAPIException(Exception):
-    pass
-
-
-def _get_xz_tokens():
-    resp = requests.get(XZ_TOKEN_URL)
-    if not resp.ok:
-        logger.error(f"code: {resp.status_code}, response: {resp.text}")
-        raise ZumperAPIException("Failed to get xz token")
-    return json.loads(resp.text)
-
-
-def _get_xz_headers():
-    xz_tokens = _get_xz_tokens()
-    return {
-        "X-Zumper-XZ-Token": xz_tokens["xz_token"],
-    }
-
-
-def get_all_listings(listing_params):
-    headers = _get_xz_headers()
-    raw_data = requests.post(LISTING_URL, headers=headers, json=listing_params)
-    parsed_data = json.loads(raw_data.text)
-    data = parsed_data["listables"]
-    expected_total = parsed_data["matching"]
-    logging.debug(f"Fetch first batch of data. Expected {expected_total} records")
-    exclude_group_ids = []
-    while len(exclude_group_ids) <= expected_total:
-        exclude_group_ids = [x["group_id"] for x in data]
-        batch_raw = requests.post(LISTING_URL, headers=headers, json={
-            **listing_params,
-            "excludeGroupIds": str(exclude_group_ids)
-        })
-
-        batch = json.loads(batch_raw.text)["listables"]
-        logging.debug(f"got {len(batch)} records")
-        if len(batch) == 0:
-            break
-        data += batch
-    return data
-
-
-def store_json_to_csv(data, today=datetime.now()):
-    data_json = json.dumps(data)
-    df = pd.read_json(data_json)
-    logging.debug(f"dataframe size is {df.shape}")
-    filename = f"output_{today.strftime('%Y-%m-%d-%H-%M')}.csv"
-    df.to_csv(filename, index=False)
-
-
 if __name__ == '__main__':
-    all_data = get_all_listings(DEFAULT_LISTING_REQUEST_PARAMS)
-    store_json_to_csv(all_data)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--city", help="city to fetch data about", default="vancouver-bc")
+    parser.add_argument("-o", "--output_prefix", help="output filename prefix. It will be suffixed with current time",
+                        default="output")
+    parser.add_argument("-f", "--output_format", help="output format", default="csv", choices=["csv", "dummy"])
+    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        raise Exception("To be implemented")
+
+    all_data = get_all_listings(args.city)
+    if args.output_format == "csv":
+        store_json_to_csv(all_data, filename_prefix=f"{args.output_prefix}_{args.city}")
+    else:
+        dummy_store_data(all_data)
 
