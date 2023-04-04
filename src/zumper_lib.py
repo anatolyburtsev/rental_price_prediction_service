@@ -22,8 +22,14 @@ def _get_xz_headers():
     }
 
 
+def _safe_get_key(object, key):
+    if key not in object:
+        logging.error(f"key: {key} not found in object: {object}")
+    return object[key]
+
+
 # url of city on zumper website
-def get_all_listings(url):
+def get_all_listings(url, one_page_only=False):
     headers = _get_xz_headers()
     listing_params = {
         **DEFAULT_LISTING_REQUEST_PARAMS,
@@ -31,11 +37,11 @@ def get_all_listings(url):
     }
     raw_data = requests.post(LISTING_URL, headers=headers, json=listing_params)
     parsed_data = json.loads(raw_data.text)
-    data = parsed_data["listables"]
-    expected_total = parsed_data["matching"]
+    data = _safe_get_key(parsed_data, "listables")
+    expected_total = _safe_get_key(parsed_data, "matching")
     logging.debug(f"Fetch first batch of data. Expected {expected_total} records")
     exclude_group_ids = []
-    while len(exclude_group_ids) <= expected_total:
+    while len(exclude_group_ids) <= expected_total and not one_page_only:
         exclude_group_ids = [x["group_id"] for x in data]
         batch_raw = requests.post(LISTING_URL, headers=headers, json={
             **listing_params,
