@@ -3,7 +3,6 @@ import logging
 from datetime import datetime
 import pandas as pd
 import awswrangler as wr
-import os
 
 
 def _json_to_df(data):
@@ -27,7 +26,7 @@ def store_json_to_csv_s3(data, s3_path, filename_prefix="output", today=datetime
     df = _json_to_df(data)
     wr.s3.to_csv(
         df=df,
-        path=os.path.join(s3_path, _get_filename(filename_prefix, today))
+        path=f'{s3_path}/year={today.year}/month={today.month}/day={today.day}/hour={today.hour}/{filename_prefix}.csv',
     )
 
 
