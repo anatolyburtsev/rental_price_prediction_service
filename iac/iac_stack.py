@@ -1,14 +1,11 @@
-from os import path
 from aws_cdk import (
     Stack,
     aws_lambda as lambda_,
     aws_s3 as s3, Duration,
-    # aws_sqs as sqs,
+    aws_stepfunctions as stepfunctions,
+    aws_stepfunctions_tasks as stepfunctions_tasks,
 )
 from constructs import Construct
-
-from iac.constants import cdk_env
-from iac.ecs.FargateStack import FargateStack
 
 
 class IacStack(Stack):
@@ -39,3 +36,13 @@ class IacStack(Stack):
         )
 
         s3_bucket.grant_write(fetch_zumper_data_lambda)
+
+        state_machine = stepfunctions.StateMachine(
+            self, "state-machine",
+            state_machine_name="ZumperDataStateMachine",
+            definition=stepfunctions_tasks.LambdaInvoke(
+                self, "fetc-zumper-data-lambda-invoke",
+                lambda_function=fetch_zumper_data_lambda).next(
+                stepfunctions.Succeed(self, "Success")
+            )
+        )
