@@ -4,7 +4,10 @@ from aws_cdk import (
     aws_s3 as s3, Duration,
     aws_stepfunctions as stepfunctions,
     aws_stepfunctions_tasks as stepfunctions_tasks,
+    aws_iam as iam,
+    aws_scheduler as scheduler,
 )
+import json
 from constructs import Construct
 
 
@@ -41,8 +44,47 @@ class IacStack(Stack):
             self, "state-machine",
             state_machine_name="ZumperDataStateMachine",
             definition=stepfunctions_tasks.LambdaInvoke(
-                self, "fetc-zumper-data-lambda-invoke",
+                self, "fetch-zumper-data-lambda-invoke",
                 lambda_function=fetch_zumper_data_lambda).next(
                 stepfunctions.Succeed(self, "Success")
+            )
+        )
+
+        ## Add scheduler permissions
+        scheduler_role = iam.Role(
+            self, "scheduler-role",
+            assumed_by=iam.ServicePrincipal("scheduler.amazonaws.com"),
+        )
+
+        scheduler_sf_execution_policy = iam.PolicyStatement(
+            actions=["states:StartExecution"],
+            resources=[state_machine.state_machine_arn],
+            effect=iam.Effect.ALLOW,
+        )
+
+        scheduler_role.add_to_policy(scheduler_sf_execution_policy)
+
+        ## Add schedule group
+        schedule_group = scheduler.CfnScheduleGroup(
+            self, "zumper-data-schedule-group",
+            name="zumper-data-schedule-group",
+        )
+
+        ## Add schedule
+        fetch_zumper_data_schedule = scheduler.CfnSchedule(
+            self, "fetch-zumper-data-schedule",
+            flexible_time_window=scheduler.CfnSchedule.FlexibleTimeWindowProperty(
+                mode="OFF",
+            ),
+            schedule_expression="rate(1 hours)",
+            group_name=schedule_group.name,
+            target=scheduler.CfnSchedule.TargetProperty(
+                arn=state_machine.state_machine_arn,
+                role_arn=scheduler_role.role_arn,
+                input=json.dumps({
+                    "metadata": {
+                        "eventId": "MY_SCHEDULED_EVENT",
+                    },
+                })
             )
         )

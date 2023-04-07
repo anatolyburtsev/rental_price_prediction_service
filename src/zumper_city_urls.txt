@@ -165,7 +165,6 @@ burlington-on
 brossard-qc
 brooks-ab
 brockville-on
-brighton-on
 brantford-on
 brandon-mb
 brampton-on
@@ -175,13 +174,8 @@ boisbriand-qc
 belleville-on
 beausejour-mb
 barrie-on
-baker-lake-nu
-baddeck-ns
 aurora-on
-asbestos-qc
 arnprior-on
-argentia-nl
-amherstburg-on
 ajax-on
 airdrie-ab
 abbotsford-bc
